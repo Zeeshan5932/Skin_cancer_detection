@@ -4,9 +4,12 @@ from fastapi import FastAPI,File,UploadFile
 from PIL import Image
 from fastapi.middleware.cors import CORSMiddleware
 import io
+from tensorflow.keras.applications.efficientnet import preprocess_input
+
+
 
 #load model
-model = tf.keras.models.load_model('./model/skin_cancer_model_final.h5')
+model = tf.keras.models.load_model('./model/skin_cancer_model.keras')
 
 #class labels
 class_names = ["Benign" , "Malignant"]
@@ -22,15 +25,20 @@ app.add_middleware(
     allow_headers=["*"],
         allow_credentials=True
 )
-
-
-#image preprocessing function
 def preprocess_image(image):
-    image = image.resize((224,224))
+    image = image.resize((224, 224))
     image = np.array(image)
-    image = image / 255.0
+    image = preprocess_input(image)
     image = np.expand_dims(image, axis=0)
     return image
+
+# #image preprocessing function
+# def preprocess_image(image):
+#     image = image.resize((224,224))
+#     image = np.array(image)
+#     image = image / 255.0
+#     image = np.expand_dims(image, axis=0)
+#     return image
 
 
 @app.post("/predict")
