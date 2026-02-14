@@ -3,6 +3,7 @@ import tensorflow as tf
 from fastapi import FastAPI,File,UploadFile
 from PIL import Image
 from fastapi.middleware.cors import CORSMiddleware
+import io
 
 #load model
 model = tf.keras.models.load_model('./model/skin_cancer_model_final.h5')
@@ -24,7 +25,7 @@ app.add_middleware(
 
 
 #image preprocessing function
-def preprocess_imaage(image):
+def preprocess_image(image):
     image = image.resize((224,224))
     image = np.array(image)
     image = image / 255.0
@@ -32,5 +33,18 @@ def preprocess_imaage(image):
     return image
 
 
+@app.post("/predict")
 
+async def predict(file: UploadFile = File(...)):
+    content = await file.read()
+    image = Image.open(io.BytesIO(content).convert("RGB"))
+    processed_image = preprocess_image(image)
 
+    prediction = model.predict(processed_image)
+    predicted_class = class_names[np.argmax(prediction)]
+    confidence = float(np.max(prediction))
+
+    return {
+        "prediction": predicted_class,
+        "confidence": round(confidence * 100, 2)
+    }
